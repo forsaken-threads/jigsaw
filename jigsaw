@@ -1,8 +1,8 @@
 #!/usr/bin/env php
 <?php
 
-use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Support\Arr;
 use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\Engines\CompilerEngine;
 use Illuminate\View\Engines\EngineResolver;
@@ -16,6 +16,7 @@ use TightenCo\Jigsaw\Handlers\BladeHandler;
 use TightenCo\Jigsaw\Handlers\DefaultHandler;
 use TightenCo\Jigsaw\Handlers\MarkdownHandler;
 use TightenCo\Jigsaw\Jigsaw;
+use TightenCo\Jigsaw\PuzzleBox;
 use TightenCo\Jigsaw\TemporaryFilesystem;
 
 if (file_exists(__DIR__.'/vendor/autoload.php')) {
@@ -28,15 +29,19 @@ if (file_exists(__DIR__.'/vendor/autoload.php')) {
 $cachePath = getcwd() . '/_tmp';
 $buildPath = getcwd() . '/build';
 $sourcePath = getcwd() . '/source';
+$config = include getcwd() . '/config.php';
 
-$container = new Container;
+$container = new PuzzleBox();
 
-$container->bind(Factory::class, function ($c) use ($cachePath, $sourcePath) {
+$container->registerConfiguredPuzzlePieces(Arr::get($config, '_puzzle_pieces', []));
+
+$container->instance(BladeCompiler::class, new BladeCompiler(new Filesystem, $cachePath));
+
+$container->singleton(Factory::class, function ($c) use ($sourcePath) {
     $resolver = new EngineResolver;
 
-    $resolver->register('blade', function () use ($cachePath) {
-        $compiler = new BladeCompiler(new Filesystem, $cachePath);
-        return new CompilerEngine($compiler, new Filesystem);
+    $resolver->register('blade', function () use ($c) {
+        return new CompilerEngine($c[BladeCompiler::class], new Filesystem);
     });
 
     $finder = new FileViewFinder(new Filesystem, [$sourcePath]);
@@ -51,6 +56,8 @@ $container->bind(MarkdownHandler::class, function ($c) use ($cachePath) {
     $tempFilesystem = new TemporaryFilesystem($cachePath);
     return new MarkdownHandler($tempFilesystem, $c[Factory::class]);
 });
+
+$container->bootConfiguredPuzzlePieces();
 
 $jigsaw = new Jigsaw(new Filesystem, $cachePath);
 
