@@ -65,6 +65,12 @@ $jigsaw->registerHandler($container[MarkdownHandler::class]);
 $jigsaw->registerHandler($container[BladeHandler::class]);
 $jigsaw->registerHandler($container[DefaultHandler::class]);
 
+$pass = 1;
+while ($modifiers = $container->tagged('jigsaw.build_modifier.pass.' . $pass)) {
+    $jigsaw->registerBuildModifiers($modifiers, $pass);
+    $pass++;
+}
+
 $buildCommand = new BuildCommand($jigsaw, $sourcePath, $buildPath);
 
 $app = new Symfony\Component\Console\Application('Jigsaw', '0.6.0');

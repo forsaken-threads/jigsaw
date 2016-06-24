@@ -12,6 +12,7 @@ class Jigsaw
     private $options = [
         'pretty' => true
     ];
+    private $modifiers = [];
 
     public function __construct(Filesystem $files, $cachePath)
     {
@@ -24,10 +25,24 @@ class Jigsaw
         $this->handlers[] = $handler;
     }
 
+    public function registerBuildModifiers($modifiers, $pass)
+    {
+        $this->modifiers[$pass] = $modifiers;
+    }
+
     public function build($source, $dest, $config = [])
     {
         $this->prepareDirectories([$this->cachePath, $dest]);
-        $this->buildSite($source, $dest, $config);
+        foreach ($this->modifiers as $pass => $modifiers) {
+            foreach ($modifiers as $modifier) {
+                /** @var BuildModifier $modifier */
+                $modifier->modify();
+            }
+            $passSource = $pass ? "$source-$pass" : $source;
+            if ($this->files->isDirectory($passSource)) {
+                $this->buildSite($passSource, $dest, $config);
+            }
+        }
         $this->cleanup();
     }
 
