@@ -33,10 +33,22 @@ $config = include getcwd() . '/config.php';
 
 $container = new PuzzleBox();
 
-$container->registerConfiguredPuzzlePieces(Arr::get($config, '_puzzle_pieces', []));
+// Bind our TemporaryFilesystem into the container so anyone can use it
+$container->instance(TemporaryFilesystem::class, new TemporaryFilesystem($cachePath));
 
+// Gather up the Puzzle Piece plugins, including the built-in file handlers
+$puzzlePieces = array_merge(
+    [BladeHandler::class, MarkdownHandler::class, DefaultHandler::class],
+    Arr::get($config, '_puzzle_pieces', [])
+);
+
+// This will tag the Puzzle Pieces in the container and run any register methods if they exist
+$container->registerPuzzlePieces($puzzlePieces);
+
+// Bind the BladeCompiler instance to the container so custom directives/extensions can be created
 $container->instance(BladeCompiler::class, new BladeCompiler(new Filesystem, $cachePath));
 
+// Bind the View Factory as a singleton
 $container->singleton(Factory::class, function ($c) use ($sourcePath) {
     $resolver = new EngineResolver;
 
@@ -48,28 +60,16 @@ $container->singleton(Factory::class, function ($c) use ($sourcePath) {
     return new Factory($resolver, $finder, Mockery::mock(Dispatcher::class)->shouldIgnoreMissing());
 });
 
-$container->bind(BladeHandler::class, function ($c) {
-    return new BladeHandler($c[Factory::class]);
-});
-
-$container->bind(MarkdownHandler::class, function ($c) use ($cachePath) {
-    $tempFilesystem = new TemporaryFilesystem($cachePath);
-    return new MarkdownHandler($tempFilesystem, $c[Factory::class]);
-});
-
-$container->bootConfiguredPuzzlePieces();
+// This will run any boot methods on the bindings tagged as a Puzzle Piece.
+// It will also tag special Puzzle Pieces like File Handlers and Build Decorators
+$container->bootPuzzlePieces();
 
 $jigsaw = new Jigsaw(new Filesystem, $cachePath);
 
-$jigsaw->registerHandler($container[MarkdownHandler::class]);
-$jigsaw->registerHandler($container[BladeHandler::class]);
-$jigsaw->registerHandler($container[DefaultHandler::class]);
+$jigsaw->registerHandlers($container->tagged('jigsaw.file_handler'));
+$jigsaw->registerDefaultHandler($container[DefaultHandler::class]);
 
-$pass = 1;
-while ($modifiers = $container->tagged('jigsaw.build_modifier.pass.' . $pass)) {
-    $jigsaw->registerBuildModifiers($modifiers, $pass);
-    $pass++;
-}
+$jigsaw->registerBuildDecorators($container->tagged('jigsaw.build_decorator'));
 
 $buildCommand = new BuildCommand($jigsaw, $sourcePath, $buildPath);
 

@@ -1,6 +1,6 @@
 <?php namespace TightenCo\Jigsaw;
 
-abstract class PuzzlePiece
+class PuzzlePiece
 {
     protected $container;
 
@@ -9,7 +9,4 @@ abstract class PuzzlePiece
         $this->container = $container;
     }
 
-    abstract public function boot();
-
-    abstract public function register();
 }

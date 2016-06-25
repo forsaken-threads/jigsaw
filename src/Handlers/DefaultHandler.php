@@ -1,21 +1,16 @@
 <?php namespace TightenCo\Jigsaw\Handlers;
 
-use Illuminate\Contracts\View\Factory;
 use TightenCo\Jigsaw\Filesystem;
 use TightenCo\Jigsaw\ProcessedFile;
+use TightenCo\Jigsaw\PuzzlePiece;
 
-class DefaultHandler
+class DefaultHandler extends PuzzlePiece
 {
     private $files;
 
-    public function __construct(Filesystem $files)
+    public function boot(Filesystem $files)
     {
         $this->files = $files;
-    }
-
-    public function canHandle($file)
-    {
-        return true;
     }
 
     public function handle($file, $data)

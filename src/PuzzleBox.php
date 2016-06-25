@@ -10,20 +10,35 @@ class PuzzleBox extends Container
         $this->instance(PuzzleBox::class, $this);
     }
 
-    public function bootConfiguredPuzzlePieces()
+    public function bootPuzzlePieces()
     {
-        foreach ($this->tagged('jigsaw.puzzle-pieces') as $puzzlePiece) {
-            /** @var PuzzlePiece $puzzlePiece */
-            $puzzlePiece->boot();
+        foreach ($this->tagged('jigsaw.puzzle_piece') as $puzzlePiece) {
+            if (method_exists($puzzlePiece, 'boot')) {
+                $this->call([$puzzlePiece, 'boot']);
+            }
+            if ($puzzlePiece instanceof BuildDecorator) {
+                $this->tag(get_class($puzzlePiece), 'jigsaw.build_decorator');
+            }
+            if ($puzzlePiece instanceof FileHandler) {
+                $this->tag(get_class($puzzlePiece), 'jigsaw.file_handler');
+            }
         }
     }
 
-    public function registerConfiguredPuzzlePieces(array $puzzlePieces = [])
+    public function registerPuzzlePieces(array $puzzlePieces = [])
     {
-        $this->tag($puzzlePieces, 'jigsaw.puzzle-pieces');
         foreach ($puzzlePieces as $puzzlePiece) {
-            $this->bind($puzzlePiece);
-            $this->make($puzzlePiece)->register();
+            $this->registerPuzzlePiece($puzzlePiece);
         }
+    }
+
+    public function registerPuzzlePiece($puzzlePiece)
+    {
+        $this->tag($puzzlePiece, 'jigsaw.puzzle_piece');
+        $instance = $this->make($puzzlePiece);
+        if (method_exists($instance, 'register')) {
+            $instance->register();
+        }
+        $this->instance($puzzlePiece, $instance);
     }
 }

@@ -3,16 +3,18 @@
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\Str;
 use TightenCo\Jigsaw\Filesystem;
+use TightenCo\Jigsaw\Handlers\DefaultHandler;
 
 class Jigsaw
 {
     private $files;
     private $cachePath;
+    private $defaultHandler;
     private $handlers = [];
     private $options = [
         'pretty' => true
     ];
-    private $modifiers = [];
+    private $decorators = [];
 
     public function __construct(Filesystem $files, $cachePath)
     {
@@ -20,28 +22,37 @@ class Jigsaw
         $this->cachePath = $cachePath;
     }
 
-    public function registerHandler($handler)
+    public function registerHandlers($handlers)
     {
-        $this->handlers[] = $handler;
+        $this->handlers = $handlers;
     }
 
-    public function registerBuildModifiers($modifiers, $pass)
+    public function registerDefaultHandler($handler)
     {
-        $this->modifiers[$pass] = $modifiers;
+        $this->defaultHandler = $handler;
+    }
+
+    public function registerBuildDecorators($decorators)
+    {
+        foreach ($decorators as $decorator) {
+            /** @var BuildDecorator $decorator */
+            $this->decorators[$decorator->getPass()][] = $decorator;
+        }
+        ksort($this->decorators);
     }
 
     public function build($source, $dest, $config = [])
     {
         $this->prepareDirectories([$this->cachePath, $dest]);
-        foreach ($this->modifiers as $pass => $modifiers) {
-            foreach ($modifiers as $modifier) {
-                /** @var BuildModifier $modifier */
-                $modifier->modify();
+        $this->buildSite($source, $dest, $config);
+        foreach ($this->decorators as $pass => $decorators) {
+            $this->files->copyDirectory($dest, $source . $pass);
+            foreach ($decorators as $decorator) {
+                /** @var BuildDecorator $decorator */
+                $decorator->decorate($source . $pass);
             }
-            $passSource = $pass ? "$source-$pass" : $source;
-            if ($this->files->isDirectory($passSource)) {
-                $this->buildSite($passSource, $dest, $config);
-            }
+            $this->buildSite($source . $pass, $dest, $config);
+            $this->files->deleteDirectory($source . $pass);
         }
         $this->cleanup();
     }
@@ -144,5 +155,6 @@ class Jigsaw
                 return $handler;
             }
         }
+        return $this->defaultHandler;
     }
 }

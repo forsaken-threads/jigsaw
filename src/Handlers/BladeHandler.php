@@ -1,13 +1,14 @@
 <?php namespace TightenCo\Jigsaw\Handlers;
 
-use Illuminate\Contracts\View\Factory;
+use Illuminate\View\Factory;
+use TightenCo\Jigsaw\FileHandler;
 use TightenCo\Jigsaw\ProcessedFile;
 
-class BladeHandler
+class BladeHandler extends FileHandler
 {
-    private $viewFactory;
+    protected $viewFactory;
 
-    public function __construct(Factory $viewFactory)
+    public function boot(Factory $viewFactory)
     {
         $this->viewFactory = $viewFactory;
     }

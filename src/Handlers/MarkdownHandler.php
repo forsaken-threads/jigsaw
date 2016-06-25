@@ -1,20 +1,22 @@
 <?php namespace TightenCo\Jigsaw\Handlers;
 
-use Illuminate\Contracts\View\Factory;
+use Illuminate\View\Factory;
+use TightenCo\Jigsaw\FileHandler;
 use TightenCo\Jigsaw\ProcessedFile;
 use Mni\FrontYAML\Parser;
+use TightenCo\Jigsaw\TemporaryFilesystem;
 
-class MarkdownHandler
+class MarkdownHandler extends FileHandler
 {
     private $temporaryFilesystem;
     private $viewFactory;
     private $parser;
 
-    public function __construct($temporaryFilesystem, Factory $viewFactory, $parser = null)
+    public function boot(TemporaryFilesystem $temporaryFilesystem, Factory $viewFactory, Parser $parser)
     {
         $this->temporaryFilesystem = $temporaryFilesystem;
         $this->viewFactory = $viewFactory;
-        $this->parser = $parser ?: new Parser;
+        $this->parser = $parser;
     }
 
     public function canHandle($file)
