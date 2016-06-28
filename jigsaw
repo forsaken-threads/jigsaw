@@ -8,6 +8,7 @@ use Illuminate\View\Engines\CompilerEngine;
 use Illuminate\View\Engines\EngineResolver;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
+use TightenCo\Jigsaw\BuildDecorator;
 use TightenCo\Jigsaw\Console\BuildCommand;
 use TightenCo\Jigsaw\Console\InitCommand;
 use TightenCo\Jigsaw\Console\ServeCommand;
@@ -33,10 +34,13 @@ $config = include getcwd() . '/config.php';
 
 $container = new PuzzleBox();
 
+// Register our instance globally
+$container->setInstance($container);
+
 // Bind our TemporaryFilesystem into the container so anyone can use it
 $container->instance(TemporaryFilesystem::class, new TemporaryFilesystem($cachePath));
 
-// Gather up the Puzzle Piece plugins, including the built-in file handlers
+// Gather up the Puzzle Piece plugins, including the built-in file handlers and the Build Decorator
 $puzzlePieces = array_merge(
     [BladeHandler::class, MarkdownHandler::class, DefaultHandler::class],
     Arr::get($config, '_puzzle_pieces', [])

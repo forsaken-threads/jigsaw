@@ -4,7 +4,6 @@ use Illuminate\Container\Container;
 
 class PuzzleBox extends Container
 {
-
     public function __construct()
     {
         $this->instance(PuzzleBox::class, $this);

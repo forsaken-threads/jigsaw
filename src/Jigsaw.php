@@ -7,6 +7,8 @@ use TightenCo\Jigsaw\Handlers\DefaultHandler;
 
 class Jigsaw
 {
+    static protected $currentFile;
+
     private $files;
     private $cachePath;
     private $defaultHandler;
@@ -15,6 +17,11 @@ class Jigsaw
         'pretty' => true
     ];
     private $decorators = [];
+
+    static public function getCurrentFile()
+    {
+        return static::$currentFile;
+    }
 
     public function __construct(Filesystem $files, $cachePath)
     {
@@ -44,14 +51,15 @@ class Jigsaw
     public function build($source, $dest, $config = [])
     {
         $this->prepareDirectories([$this->cachePath, $dest]);
-        $this->buildSite($source, $dest, $config);
+        $this->buildSite($source, $dest, $config, 0);
         foreach ($this->decorators as $pass => $decorators) {
             $this->files->copyDirectory($dest, $source . $pass);
+            $this->prepareDirectory($dest, true);
             foreach ($decorators as $decorator) {
                 /** @var BuildDecorator $decorator */
-                $decorator->decorate($source . $pass);
+                $decorator->decorate($pass, $source . $pass);
             }
-            $this->buildSite($source . $pass, $dest, $config);
+            $this->buildSite($source . $pass, $dest, $config, $pass);
             $this->files->deleteDirectory($source . $pass);
         }
         $this->cleanup();
@@ -80,12 +88,12 @@ class Jigsaw
         }
     }
 
-    private function buildSite($source, $dest, $config)
+    private function buildSite($source, $dest, $config, $pass)
     {
         collect($this->files->allFiles($source))->filter(function ($file) {
             return ! $this->shouldIgnore($file);
-        })->each(function ($file) use ($dest, $config) {
-            $this->buildFile($file, $dest, $config);
+        })->each(function ($file) use ($dest, $config, $pass) {
+            $this->buildFile($file, $dest, $config, $pass);
         });
     }
 
@@ -99,17 +107,18 @@ class Jigsaw
         return preg_match('/(^_|\/_)/', $file->getRelativePathname()) === 1;
     }
 
-    private function buildFile($file, $dest, $config)
+    private function buildFile($file, $dest, $config, $pass)
     {
-        $file = $this->handle($file, $config);
+        static::$currentFile = $file->getFilename();
+        $file = $this->handle($file, $config, $pass);
         $directory = $this->getDirectory($file);
         $this->prepareDirectory("{$dest}/{$directory}");
         $this->files->put("{$dest}/{$this->getRelativePathname($file)}", $file->contents());
     }
 
-    private function handle($file, $config)
+    private function handle($file, $config, $pass)
     {
-        return $this->getHandler($file)->handle($file, $config);
+        return $this->getHandler($file)->handle($file, $config, $pass);
     }
 
     private function getDirectory($file)
