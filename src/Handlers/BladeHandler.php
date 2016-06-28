@@ -1,6 +1,7 @@
 <?php namespace TightenCo\Jigsaw\Handlers;
 
 use Illuminate\View\Factory;
+use Symfony\Component\Finder\SplFileInfo;
 use TightenCo\Jigsaw\FileHandler;
 use TightenCo\Jigsaw\ProcessedFile;
 
