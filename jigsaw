@@ -8,7 +8,6 @@ use Illuminate\View\Engines\CompilerEngine;
 use Illuminate\View\Engines\EngineResolver;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
-use TightenCo\Jigsaw\BuildDecorator;
 use TightenCo\Jigsaw\Console\BuildCommand;
 use TightenCo\Jigsaw\Console\InitCommand;
 use TightenCo\Jigsaw\Console\ServeCommand;

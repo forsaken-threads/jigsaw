@@ -2,6 +2,7 @@
 
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\Str;
+use KnotsWall\Collector\Collector;
 use TightenCo\Jigsaw\Filesystem;
 use TightenCo\Jigsaw\Handlers\DefaultHandler;
 
@@ -57,7 +58,8 @@ class Jigsaw
             $this->prepareDirectory($dest, true);
             foreach ($decorators as $decorator) {
                 /** @var BuildDecorator $decorator */
-                $decorator->decorate($pass, $source . $pass);
+                $decorator->setCurrentPass($pass);
+                $decorator->decorate($source . $pass);
             }
             $this->buildSite($source . $pass, $dest, $config, $pass);
             $this->files->deleteDirectory($source . $pass);
@@ -109,6 +111,7 @@ class Jigsaw
 
     private function buildFile($file, $dest, $config, $pass)
     {
+        // Quick and dirty way to globally store the current file being processed
         static::$currentFile = $file->getFilename();
         $file = $this->handle($file, $config, $pass);
         $directory = $this->getDirectory($file);
