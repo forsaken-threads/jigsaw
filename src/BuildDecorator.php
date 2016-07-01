@@ -53,6 +53,5 @@ abstract class BuildDecorator extends PuzzlePiece
         if (!$this->isDecorated($filename)) {
             $this->decoratedFiles[] = $filename;
         }
-        echo "decorating $filename\n";
     }
 }

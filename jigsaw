@@ -8,6 +8,7 @@ use Illuminate\View\Engines\CompilerEngine;
 use Illuminate\View\Engines\EngineResolver;
 use Illuminate\View\Factory;
 use Illuminate\View\FileViewFinder;
+use TightenCo\Jigsaw\Collector\Collector;
 use TightenCo\Jigsaw\Console\BuildCommand;
 use TightenCo\Jigsaw\Console\InitCommand;
 use TightenCo\Jigsaw\Console\ServeCommand;
@@ -41,7 +42,7 @@ $container->instance(TemporaryFilesystem::class, new TemporaryFilesystem($cacheP
 
 // Gather up the Puzzle Piece plugins, including the built-in file handlers and the Build Decorator
 $puzzlePieces = array_merge(
-    [BladeHandler::class, MarkdownHandler::class, DefaultHandler::class],
+    [BladeHandler::class, MarkdownHandler::class, DefaultHandler::class, Collector::class],
     Arr::get($config, '_puzzle_pieces', [])
 );
 

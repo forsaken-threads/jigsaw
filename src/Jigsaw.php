@@ -2,7 +2,7 @@
 
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Support\Str;
-use KnotsWall\Collector\Collector;
+use TightenCo\Jigsaw\Collector\Collector;
 use TightenCo\Jigsaw\Filesystem;
 use TightenCo\Jigsaw\Handlers\DefaultHandler;
 
