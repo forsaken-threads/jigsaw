@@ -16,7 +16,8 @@ class Collector extends BuildDecorator
             $meta = json_decode(substr($meta, 1, -1), true);
             $this->collectItem($meta);
             $meta = $this->makeExtractable($meta);
-            return "<?php extract($meta, EXTR_SKIP); ?>";
+            $abstract = !empty($meta['collection_type']) ? $meta['collection_type'] : 'collection.posts';
+            return "<?php extract($meta, EXTR_SKIP); \$item =& TightenCo\\Jigsaw\\PuzzleBox::getInstance()->make('$abstract')->currentItem(); ?>";
         });
 
         $blade->directive('collectindex', function($options) {
@@ -54,7 +55,11 @@ class Collector extends BuildDecorator
     {
         $symbols = [];
         foreach ($array as $key => $value) {
-            $symbols[] = '"' . $key . '" => "' . addslashes($value) . '"';
+            if (!is_array($value)) {
+                $symbols[] = '"' . $key . '" => "' . addslashes($value) . '"';
+            } else {
+                $symbols[] = $this->makeExtractable($value);
+            }
         }
         return '[' . implode(', ', $symbols) . ']';
     }

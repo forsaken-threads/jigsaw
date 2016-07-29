@@ -113,10 +113,15 @@ class Jigsaw
     {
         // Quick and dirty way to globally store the current file being processed
         static::$currentFile = $file->getFilename();
-        $file = $this->handle($file, $config, $pass);
-        $directory = $this->getDirectory($file);
-        $this->prepareDirectory("{$dest}/{$directory}");
-        $this->files->put("{$dest}/{$this->getRelativePathname($file)}", $file->contents());
+        $files = $this->handle($file, $config, $pass);
+        if (!is_array($files)) {
+            $files = [$files];
+        }
+        foreach ($files as $file) {
+            $directory = $this->getDirectory($file);
+            $this->prepareDirectory("{$dest}/{$directory}");
+            $this->files->put("{$dest}/{$this->getRelativePathname($file)}", $file->contents());
+        }
     }
 
     private function handle($file, $config, $pass)

@@ -1,5 +1,6 @@
 <?php namespace TightenCo\Jigsaw\Collector;
 
+use Illuminate\View\Compilers\BladeCompiler;
 use Illuminate\View\Factory;
 use Symfony\Component\Finder\SplFileInfo;
 use TightenCo\Jigsaw\Handlers\BladeHandler;
@@ -16,6 +17,15 @@ class PostsProcessor extends BladeHandler
         $this->viewFactory = $viewFactory;
         $this->viewFactory->addExtension('posts.process.php', 'blade');
         $this->collector = $collector;
+
+        /** @var BladeCompiler $blade */
+        $blade = $this->container[BladeCompiler::class];
+
+        $blade->directive('postset', function($args) {
+            $args = explode(',', substr($args, 1, -1), 2);
+            $args[1] = addslashes(trim($args[1]));
+            return "<?php \$item['$args[0]'] = stripslashes('$args[1]'); ?>";
+        });
     }
 
     public function canHandle($file)

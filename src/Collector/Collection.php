@@ -4,4 +4,6 @@
 interface Collection
 {
     public function collect($meta);
+
+    public function &currentItem();
 }

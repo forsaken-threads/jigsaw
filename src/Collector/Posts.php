@@ -9,17 +9,38 @@ class Posts implements Collection
         return $this->posts[] = $this->setDefaults($post);
     }
 
+    public function &currentItem()
+    {
+        return $this->posts[count($this->posts) - 1];
+    }
+
     public function getPosts($sort = false)
     {
         switch ($sort) {
             case 'month':
-                return collect(array_reverse($this->posts))->transform(function ($post) {
+                return collect($this->posts)->sortBy('published')->reverse()->transform(function ($post) {
                     $post['month'] = date('F Y', strtotime($post['published']));
                     return $post;
                 })->groupBy('month');
+            case 'tags':
+                return $this->paginateByTags();
             default:
-                return array_reverse($this->posts);
+                return collect($this->posts)->sortBy('published')->reverse();
         }
+    }
+
+    public function paginateByTags()
+    {
+        $tags = collect($this->posts)->reduce(function ($carry, $post) {
+            return array_merge($carry, $post['tags']);
+        }, []);
+        $paginated = [];
+        foreach ($tags as $tag) {
+            $paginated[$tag] = collect($this->posts)->filter(function ($post) use ($tag) {
+                return in_array($tag, $post['tags']);
+            });
+        }
+        return $paginated;
     }
 
     protected function setDefaults($post)
